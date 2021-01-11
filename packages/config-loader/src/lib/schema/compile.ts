@@ -45,20 +45,21 @@ export function compileConfigSchemas(
     schemas: {
       'https://backstage.io/schema/config-v1': true,
     },
-  }).addKeyword('visibility', {
+  }).addKeyword({
+    keyword: 'visibility',
     metaSchema: {
       type: 'string',
       enum: CONFIG_VISIBILITIES,
     },
     compile(visibility: ConfigVisibility) {
-      return (_data, dataPath) => {
-        if (!dataPath) {
+      return (_data, context) => {
+        if (context?.dataPath === undefined) {
           return false;
         }
         if (visibility && visibility !== 'backend') {
-          const normalizedPath = dataPath.replace(
+          const normalizedPath = context.dataPath.replace(
             /\['?(.*?)'?\]/g,
-            (_, segment) => `.${segment}`,
+            (_, segment) => `/${segment}`,
           );
           visibilityByPath.set(normalizedPath, visibility);
         }
