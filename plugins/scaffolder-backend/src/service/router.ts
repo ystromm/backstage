@@ -15,6 +15,7 @@
  */
 
 import { Config } from '@backstage/config';
+import os from 'os';
 import fs from 'fs-extra';
 import Docker from 'dockerode';
 import express from 'express';
@@ -33,6 +34,11 @@ import {
 import { CatalogEntityClient } from '../lib/catalog';
 import { validate, ValidatorResult } from 'jsonschema';
 import parseGitUrl from 'git-url-parse';
+import {
+  MemoryTaskBroker,
+  MemoryDatabase,
+  TaskWorker,
+} from '../scaffolder/tasks';
 
 export interface RouterOptions {
   preparers: PreparerBuilder;
@@ -62,9 +68,8 @@ export async function createRouter(
   } = options;
 
   const logger = parentLogger.child({ plugin: 'scaffolder' });
-  const jobProcessor = new JobProcessor();
 
-  let workingDirectory: string;
+  let workingDirectory = os.tmpdir();
   if (config.has('backend.workingDirectory')) {
     workingDirectory = config.getString('backend.workingDirectory');
     try {
@@ -83,6 +88,20 @@ export async function createRouter(
       throw err;
     }
   }
+
+  const jobProcessor = new JobProcessor();
+  const taskBroker = new MemoryTaskBroker(new MemoryDatabase());
+  const worker = new TaskWorker({
+    logger,
+    taskBroker,
+    workingDirectory,
+    dockerClient,
+    entityClient,
+    preparers,
+    publishers,
+    templaters,
+  });
+  worker.start();
 
   router
     .get('/v1/job/:jobId', ({ params }, res) => {
@@ -108,6 +127,62 @@ export async function createRouter(
         error: job.error,
       });
     })
+    // curl -X POST -d '{"templateName":"springboot-template","values": {"storePath":"https://github.com/jhaals/foo", "component_id":"woop", "description": "apa", "owner": "me" }}' -H 'Content-Type: application/json' localhost:7000/api/scaffolder/v2/tasks
+    .post('/v2/tasks', async (req, res) => {
+      const templateName: string = req.body.templateName;
+      const values: TemplaterValues = {
+        ...req.body.values,
+        destination: {
+          git: parseGitUrl(req.body.values.storePath),
+        },
+      };
+      const template = await entityClient.findTemplate(templateName);
+
+      const validationResult: ValidatorResult = validate(
+        values,
+        template.spec.schema,
+      );
+
+      if (!validationResult.valid) {
+        res.status(400).json({ errors: validationResult.errors });
+        return;
+      }
+      const result = await taskBroker.dispatch({
+        template,
+        values,
+      });
+
+      res.status(201).json({ id: result.taskId });
+    })
+
+    .get('/v2/tasks/:taskId/eventstream', async (req, res) => {
+      const { taskId } = req.params;
+      const after = Number(req.query.after) || undefined;
+      logger.info('event stream opened');
+
+      // Mandatory headers and http status to keep connection open
+      res.writeHead(200, {
+        Connection: 'keep-alive',
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'text/event-stream',
+      });
+      // After client opens connection send all nests as string
+      const unsubscribe = taskBroker.observe(
+        { taskId, after },
+        ({ events }) => {
+          for (const event of events) {
+            res.write(`event:${JSON.stringify(event)}\n\n`);
+          }
+        },
+      );
+      // When client closes connection we update the clients list
+      // avoiding the disconnected one
+      req.on('close', () => {
+        unsubscribe();
+        logger.info('event stream closed');
+      });
+    })
+
     .post('/v1/jobs', async (req, res) => {
       const templateName: string = req.body.templateName;
       const values: TemplaterValues = {
