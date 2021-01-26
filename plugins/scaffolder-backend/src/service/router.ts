@@ -39,6 +39,8 @@ import {
   MemoryDatabase,
   TaskWorker,
 } from '../scaffolder/tasks';
+import { TemplateActionRegistry } from '../scaffolder/tasks/TemplateConverter';
+import { LOCATION_ANNOTATION } from '@backstage/catalog-model';
 
 export interface RouterOptions {
   preparers: PreparerBuilder;
@@ -89,6 +91,67 @@ export async function createRouter(
     }
   }
 
+  const registry = new TemplateActionRegistry();
+
+  registerLegacyAction(registry, {
+    logger,
+    config,
+    dockerClient,
+  });
+
+  /*  */
+
+  // const preparer = preparers.get(
+  //   'https://github.com/backstage/backstage/blob/master/plugins/scaffolder-backend/sample-templates/springboot-grpc-template/template.yaml',
+  // );
+  // preparer.prepare(
+  //   {
+  //     apiVersion: 'backstage.io/v1alpha1',
+  //     kind: 'Template',
+  //     metadata: {
+  //       annotations: {
+  //         [LOCATION_ANNOTATION]:
+  //           'url:https://github.com/backstage/backstage/blob/master/plugins/scaffolder-backend/sample-templates/springboot-grpc-template/template.yaml',
+  //       },
+  //       name: 'springboot-template',
+  //       title: 'Spring Boot gRPC Service',
+  //       description:
+  //         'Create a simple microservice using gRPC and Spring Boot Java',
+  //       tags: ['recommended', 'java', 'grpc'],
+  //     },
+  //     spec: {
+  //       templater: 'cookiecutter',
+  //       type: 'service',
+  //       path: '.',
+  //       schema: {
+  //         required: ['component_id', 'description'],
+  //         properties: {
+  //           component_id: {
+  //             title: 'Name',
+  //             type: 'string',
+  //             description: 'Unique name of the component',
+  //           },
+  //           description: {
+  //             title: 'Description',
+  //             type: 'string',
+  //             description: 'Help others understand what this service does.',
+  //           },
+  //           http_port: {
+  //             title: 'Port',
+  //             type: 'integer',
+  //             default: 8080,
+  //             description: 'The port to run the gRPC service on',
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   {
+  //     workingDirectory: '/tmp/test',
+  //     logger,
+  //   },
+  // );
+  // r: No location annotation provided in entity: springboot-template
   const jobProcessor = new JobProcessor();
   const taskBroker = new MemoryTaskBroker(new MemoryDatabase());
   const worker = new TaskWorker({
