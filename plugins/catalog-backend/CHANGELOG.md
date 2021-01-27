@@ -1,5 +1,12 @@
 # @backstage/plugin-catalog-backend
 
+## 0.5.5
+
+### Patch Changes
+
+- a91aa6bf2: Support supplying a custom catalog descriptor file parser
+  - @backstage/backend-common@0.5.1
+
 ## 0.5.4
 
 ### Patch Changes

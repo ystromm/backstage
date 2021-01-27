@@ -1,5 +1,12 @@
 # @backstage/techdocs-common
 
+## 0.3.6
+
+### Patch Changes
+
+- db2328c88: Add rate limiter for concurrent execution of file uploads in AWS and Google publishers
+  - @backstage/backend-common@0.5.1
+
 ## 0.3.5
 
 ### Patch Changes

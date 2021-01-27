@@ -1,5 +1,14 @@
 # @backstage/backend-common
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [ef7957be4]
+- Updated dependencies [ef7957be4]
+- Updated dependencies [ef7957be4]
+  - @backstage/config-loader@0.5.0
+
 ## 0.5.0
 
 ### Minor Changes

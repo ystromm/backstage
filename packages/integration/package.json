@@ -37,7 +37,7 @@
     "luxon": "^1.25.0"
   },
   "devDependencies": {
-    "@backstage/cli": "^0.4.7",
+    "@backstage/cli": "^0.5.0",
     "@backstage/test-utils": "^0.1.5",
     "@types/jest": "^26.0.7",
     "@types/luxon": "^1.25.0",
