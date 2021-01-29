@@ -46,15 +46,18 @@ type PrivateInfo = {
 export type GoogleAuthProviderOptions = OAuthProviderOptions & {
   logger: Logger;
   identityClient: CatalogIdentityClient;
+  hostedDomain: string | undefined;
 };
 
 export class GoogleAuthProvider implements OAuthHandlers {
   private readonly _strategy: GoogleStrategy;
   private readonly logger: Logger;
   private readonly identityClient: CatalogIdentityClient;
+  private hostedDomain: string | undefined;
 
   constructor(options: GoogleAuthProviderOptions) {
     this.logger = options.logger;
+    this.hostedDomain = options.hostedDomain;
     this.identityClient = options.identityClient;
     // TODO: throw error if env variables not set?
     this._strategy = new GoogleStrategy(
@@ -74,6 +77,17 @@ export class GoogleAuthProvider implements OAuthHandlers {
         done: PassportDoneCallback<OAuthResponse, PrivateInfo>,
       ) => {
         const profile = makeProfileInfo(rawProfile, params.id_token);
+        this.logger.info('profile', profile);
+
+        if (typeof this.hostedDomain === 'string') {
+          if (typeof profile.email === 'string') {
+            if (!profile.email.endsWith(`@${this.hostedDomain}`)) {
+              done(new Error());
+            }
+          } else {
+            done(new Error());
+          }
+        }
         done(
           undefined,
           {
@@ -94,12 +108,16 @@ export class GoogleAuthProvider implements OAuthHandlers {
   }
 
   async start(req: OAuthStartRequest): Promise<RedirectInfo> {
-    return await executeRedirectStrategy(req, this._strategy, {
+    const options: Record<string, string> = {
       accessType: 'offline',
       prompt: 'consent',
       scope: req.scope,
       state: encodeState(req.state),
-    });
+    };
+    if (typeof this.hostedDomain === 'string') {
+      options.hostedDomain = this.hostedDomain;
+    }
+    return await executeRedirectStrategy(req, this._strategy, options);
   }
 
   async handler(
@@ -185,11 +203,13 @@ export const createGoogleProvider: AuthProviderFactory = ({
   OAuthEnvironmentHandler.mapConfig(config, envConfig => {
     const clientId = envConfig.getString('clientId');
     const clientSecret = envConfig.getString('clientSecret');
+    const hostedDomain = envConfig.getOptionalString('hostedDomain');
     const callbackUrl = `${globalConfig.baseUrl}/${providerId}/handler/frame`;
 
     const provider = new GoogleAuthProvider({
       clientId,
       clientSecret,
+      hostedDomain,
       callbackUrl,
       logger,
       identityClient: new CatalogIdentityClient({ catalogApi }),
