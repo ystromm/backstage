@@ -82,10 +82,14 @@ export class GoogleAuthProvider implements OAuthHandlers {
         if (typeof this.hostedDomain === 'string') {
           if (typeof profile.email === 'string') {
             if (!profile.email.endsWith(`@${this.hostedDomain}`)) {
-              done(new Error());
+              done(
+                new Error(
+                  `Google profile email does not belong to the allowed domain`,
+                ),
+              );
             }
           } else {
-            done(new Error());
+            done(new Error('Google profile contained no email'));
           }
         }
         done(
