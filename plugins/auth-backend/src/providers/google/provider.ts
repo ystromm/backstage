@@ -46,14 +46,14 @@ type PrivateInfo = {
 export type GoogleAuthProviderOptions = OAuthProviderOptions & {
   logger: Logger;
   identityClient: CatalogIdentityClient;
-  hostedDomain: string | undefined;
+  hostedDomain?: string;
 };
 
 export class GoogleAuthProvider implements OAuthHandlers {
   private readonly _strategy: GoogleStrategy;
   private readonly logger: Logger;
   private readonly identityClient: CatalogIdentityClient;
-  private hostedDomain: string | undefined;
+  private readonly hostedDomain?: string;
 
   constructor(options: GoogleAuthProviderOptions) {
     this.logger = options.logger;
