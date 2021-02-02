@@ -268,8 +268,9 @@ auth:
           $env: AUTH_GOOGLE_CLIENT_ID
         clientSecret:
           $env: AUTH_GOOGLE_CLIENT_SECRET
-        # hostedDomain:
-        #  mycollege.edu
+        # Optional property to restrict login to a specific domain
+        # hd:
+        #  funnel.io
     github:
       development:
         clientId:

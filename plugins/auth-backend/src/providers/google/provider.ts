@@ -207,7 +207,9 @@ export const createGoogleProvider: AuthProviderFactory = ({
   OAuthEnvironmentHandler.mapConfig(config, envConfig => {
     const clientId = envConfig.getString('clientId');
     const clientSecret = envConfig.getString('clientSecret');
-    const hostedDomain = envConfig.getOptionalString('hostedDomain');
+    const hostedDomain =
+      envConfig.getOptionalString('hd') ??
+      envConfig.getOptionalString('hostedDomain');
     const callbackUrl = `${globalConfig.baseUrl}/${providerId}/handler/frame`;
 
     const provider = new GoogleAuthProvider({
