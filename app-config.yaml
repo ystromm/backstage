@@ -268,6 +268,8 @@ auth:
           $env: AUTH_GOOGLE_CLIENT_ID
         clientSecret:
           $env: AUTH_GOOGLE_CLIENT_SECRET
+        # hostedDomain:
+        #  mycollege.edu
     github:
       development:
         clientId:
